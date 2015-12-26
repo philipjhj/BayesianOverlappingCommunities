@@ -1,2 +1,2 @@
 # BayesianOverlappingCommunities
-Bayesian model to find overlapping in binary data. Inference performed with MCMC sampling.
+Bayesian model to find overlapping communities in binary data. Inference performed with MCMC sampling.

@@ -1,32 +1,40 @@
-function obj = Sampler(obj,nSamples)
+function myGibbsChain = GibbsSampler(myGibbsChain,testError,ActiveGibbs,NotConstrained,activeHyper,hyperindex)
 % Gibbs sampler
-
-
-
+% A is data
+% T number of samples
+% pms parameters
+% d number of concepts
 
 % clears the persistent variables of the logjoint script
 clear LogJoint;
 
-if obj .k>obj.d
+if nargin<2
+    testError = true;
+end
+if nargin<6
+    hyperindex = [];
+end
+
+if myGibbsChain.k>myGibbsChain.d
     error('the k-flip is bigger than the number of clusters')
 end
-no_perm = 2^obj.k;
+no_perm = 2^myGibbsChain.k;
 % Initialization of variables for loop
-nObs = size(obj.A,1); nFeats = size(obj.A,2);
+nObs = size(myGibbsChain.A,1); nFeats = size(myGibbsChain.A,2);
 
 %logPs = nan(T,3);
 %pms_all = cell(1,T);
 %suff_stat_all = cell(1,T);
 %rng(1)
 %rng('shuffle')
-if isempty(obj.zSamples{1})
+if isempty(myGibbsChain.zSamples{1})
     
-    z = randi([0 1],nObs,obj.d);%ones(no_obs,d);
-    q = randi([0 1],nFeats,obj.d);%ones(no_feats,d);
+    z = randi([0 1],nObs,myGibbsChain.d);%ones(no_obs,d);
+    q = randi([0 1],nFeats,myGibbsChain.d);%ones(no_feats,d);
 else
-    lastIter = find(~cellfun('isempty',obj.zSamples),1,'last');
-    z = obj.zSamples{lastIter};
-    q = obj.qSamples{lastIter};
+    lastIter = find(~cellfun('isempty',myGibbsChain.zSamples),1,'last');
+    z = myGibbsChain.zSamples{lastIter};
+    q = myGibbsChain.qSamples{lastIter};
 end
 
 
@@ -34,7 +42,7 @@ suff_stats_c = SuffStatsClass;
 logP = zeros(1,no_perm);
 NZQ = cell(1,no_perm);
 suff_stats = cell(1,no_perm);
-for i = 1:2^obj.k
+for i = 1:2^myGibbsChain.k
     suff_stats{i} = suff_stats_c;
     NZQ{i} = zeros(nObs,nFeats);
 end
@@ -44,26 +52,26 @@ end
 
 %cpu_time = zeros(1,T+1);
 %wall_time = zeros(1,T);
-obj.cpuTime(1,1) = cputime;
-for l=obj.Tstart:obj.T
+myGibbsChain.cpuTime(1,1) = cputime;
+for l=myGibbsChain.Tstart:myGibbsChain.T
     tic;
     if ActiveGibbs
         for i = 1:nFeats
-            [rand_idx,perms,perm_diff,full_shadow] = kFlip(z,q(i,:),obj.k);
+            [rand_idx,perms,perm_diff,full_shadow] = kFlip(z,q(i,:),myGibbsChain.k);
             dQ = q;
             dQ(i,rand_idx) = perms(1,:);
             prev_q = q;
             if l == 1 && i == 1 %|| 0<length(perm_diff{1})
-                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(NotConstrained,obj.A,z,dQ,obj.pms,suff_stats{1});
+                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(NotConstrained,myGibbsChain.A,z,dQ,myGibbsChain.pms,suff_stats{1});
                 prev_q = dQ;
             elseif ~isempty(perm_diff{1})
-                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(NotConstrained,obj.A,z,dQ,obj.pms,suff_stats{1},'q',i,perm_diff{1},full_shadow{1},NZQ{1},prev_q);
+                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(NotConstrained,myGibbsChain.A,z,dQ,myGibbsChain.pms,suff_stats{1},'q',i,perm_diff{1},full_shadow{1},NZQ{1},prev_q);
                 prev_q = dQ;
             end
             
             for flip = 2:no_perm
                 dQ(i,rand_idx) = perms(flip,:);
-                [logP(flip), NZQ{flip},suff_stats{flip}] = LogJoint(NotConstrained,obj.A,z,dQ,obj.pms,suff_stats{flip-1},['q'],i,perm_diff{flip},full_shadow{flip},NZQ{flip-1},prev_q);
+                [logP(flip), NZQ{flip},suff_stats{flip}] = LogJoint(NotConstrained,myGibbsChain.A,z,dQ,myGibbsChain.pms,suff_stats{flip-1},['q'],i,perm_diff{flip},full_shadow{flip},NZQ{flip-1},prev_q);
                 if isnan(logP(flip))
                     disp(cumsum(P)/sum(P))
                     disp(P)
@@ -95,15 +103,15 @@ for l=obj.Tstart:obj.T
             %prev_q=q;
         end
         
-        obj.logPs(1,l) = logP(idx);
-        obj.qSamples{l} = q;
+        myGibbsChain.logPs(1,l) = logP(idx);
+        myGibbsChain.qSamples{l} = q;
         
         if testError
             mode = 'q';
-            test_suff=calc_suff_stats(obj.A,z,q,obj.pms);
-            status=test_suff_stats(suff_stats{1},test_suff,mode,obj.pms);
+            test_suff=calc_suff_stats(myGibbsChain.A,z,q,myGibbsChain.pms);
+            status=test_suff_stats(suff_stats{1},test_suff,mode,myGibbsChain.pms);
             if status == -1
-                obj.Tstart=l+1;
+                myGibbsChain.Tstart=l+1;
                 save(strcat('Output/ErrorRuns/error_',num2str(now),'.mat'))
                 display('suff_stat is wrong, data saved to output folder')
                 display('Ending Gibbs Sampler')
@@ -112,19 +120,19 @@ for l=obj.Tstart:obj.T
         end
         
         for i = 1:nObs
-            [rand_idx,perms,perm_diff,full_shadow,perm_order] = kFlip(q,z(i,:),obj.k);
+            [rand_idx,perms,perm_diff,full_shadow,perm_order] = kFlip(q,z(i,:),myGibbsChain.k);
             %orig_z = z;
             dZ = z;
             dZ(i,rand_idx) = perms(1,:);
             prev_z = z;
             if ~isempty(perm_diff{1})
-                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(NotConstrained,obj.A,dZ,q,obj.pms,suff_stats{1},'z',i,perm_diff{1},full_shadow{1},NZQ{1},prev_z);
+                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(NotConstrained,myGibbsChain.A,dZ,q,myGibbsChain.pms,suff_stats{1},'z',i,perm_diff{1},full_shadow{1},NZQ{1},prev_z);
                 prev_z = dZ;
             end
             
             for flip = 2:no_perm
                 dZ(i,rand_idx) = perms(flip,:);
-                [logP(flip), NZQ{flip},suff_stats{flip}] = LogJoint(NotConstrained,obj.A,dZ,q,obj.pms,suff_stats{flip-1},['z'],i,perm_diff{flip},full_shadow{flip},NZQ{flip-1},prev_z);
+                [logP(flip), NZQ{flip},suff_stats{flip}] = LogJoint(NotConstrained,myGibbsChain.A,dZ,q,myGibbsChain.pms,suff_stats{flip-1},['z'],i,perm_diff{flip},full_shadow{flip},NZQ{flip-1},prev_z);
                 prev_z = dZ;
             end
             
@@ -148,15 +156,15 @@ for l=obj.Tstart:obj.T
             %prev_z = z;
         end
         logP(1) = logP(idx);
-        obj.logPs(2,l) = logP(idx);
-        obj.zSamples{l} = z;
+        myGibbsChain.logPs(2,l) = logP(idx);
+        myGibbsChain.zSamples{l} = z;
         
         if testError
             mode = 'z';
-            test_suff=calc_suff_stats(obj.A,z,q,obj.pms);
-            status=test_suff_stats(suff_stats{1},test_suff,mode,obj.pms);
+            test_suff=calc_suff_stats(myGibbsChain.A,z,q,myGibbsChain.pms);
+            status=test_suff_stats(suff_stats{1},test_suff,mode,myGibbsChain.pms);
             if status == -1
-                obj.Tstart=l+1;
+                myGibbsChain.Tstart=l+1;
                 save(strcat('Output/ErrorRuns/error_',num2str(now),'.mat'))
                 display('suff_stat is wrong, data saved to output folder')
                 display('Ending Gibbs Sampler')
@@ -167,33 +175,33 @@ for l=obj.Tstart:obj.T
     if activeHyper
         firstDone=false;
         for hyper_iterations = 1:20
-            for i = 1:size(obj.pms,1)
-                for j = 1:size(obj.pms,2)
+            for i = 1:size(myGibbsChain.pms,1)
+                for j = 1:size(myGibbsChain.pms,2)
                     if ~isempty(hyperindex)
                         if any(i == hyperindex(1,:)) || any(j == hyperindex(2,:));
                             continue
                         end
                     end
-                    pm_log=log(obj.pms(i,j));
+                    pm_log=log(myGibbsChain.pms(i,j));
                     pm_log_new=pm_log+0.1*randn;
-                    pms_new=obj.pms;
+                    pms_new=myGibbsChain.pms;
                     pms_new(i,j)=exp(pm_log_new);
-                    if l == obj.Tstart && ActiveGibbs==false && ~firstDone %|| 0<length(perm_diff{1})
+                    if l == myGibbsChain.Tstart && ActiveGibbs==false && ~firstDone %|| 0<length(perm_diff{1})
                         firstDone = true;
-                        [logP(1), NZQ{1},suff_stats{1}] = LogJoint(NotConstrained,obj.A,z,q,obj.pms,suff_stats{1});
+                        [logP(1), NZQ{1},suff_stats{1}] = LogJoint(NotConstrained,myGibbsChain.A,z,q,myGibbsChain.pms,suff_stats{1});
                     end
-                    [logP(2), NZQ{2}, suff_stats{2}] = LogJoint(NotConstrained,obj.A,z,q,pms_new,suff_stats{1},'pms',i,j,[],NZQ{1},obj.pms);
+                    [logP(2), NZQ{2}, suff_stats{2}] = LogJoint(NotConstrained,myGibbsChain.A,z,q,pms_new,suff_stats{1},'pms',i,j,[],NZQ{1},myGibbsChain.pms);
                     %fprintf(fid,'iteration: %d, idx1: %d, idx2: %d, difference: \t%f\t%f\n',l,i,j,logP(2)-logjoint(A,z,q,pms_new,suff_stats{1}),logP(1)-logjoint(A,z,q,pms));
                     %accept_ratio = exp(logP(2))/exp(logP(1));
                     P=exp(logP(1:2)-max(logP(1:2)));
                     %display(P);
-                    accept_ratio=P(2)/P(1)*pms_new(i,j)/obj.pms(i,j);
+                    accept_ratio=P(2)/P(1)*pms_new(i,j)/myGibbsChain.pms(i,j);
                     %fprintf('Ratio: %f\n', accept_ratio)
                     if rand < accept_ratio
                         %accepted=accepted+1;
                         %fprintf('accepted: %f, change: %f\n',logP(2)/logP(1),pms_new(i,j)-pms(i,j))
                         logP(1)=logP(2);
-                        obj.pms=pms_new;
+                        myGibbsChain.pms=pms_new;
                         suff_stats{1}=suff_stats{2};
                     end
                 end
@@ -201,20 +209,20 @@ for l=obj.Tstart:obj.T
             
         end
         %disp(pms)
-        obj.pmsSamples{l} = obj.pms;
-        obj.logPs(3,l) = logP(1);
-        obj.SuffStatAll{l} = suff_stats{1};
-        obj.SuffStatAll{l}.NPap = nan;
-        obj.SuffStatAll{l}.NPam = nan;
-        obj.SuffStatAll{l}.NPbp = nan;
-        obj.SuffStatAll{l}.NPbm = nan;
+        myGibbsChain.pmsSamples{l} = myGibbsChain.pms;
+        myGibbsChain.logPs(3,l) = logP(1);
+        myGibbsChain.SuffStatAll{l} = suff_stats{1};
+        myGibbsChain.SuffStatAll{l}.NPap = nan;
+        myGibbsChain.SuffStatAll{l}.NPam = nan;
+        myGibbsChain.SuffStatAll{l}.NPbp = nan;
+        myGibbsChain.SuffStatAll{l}.NPbm = nan;
         
         if testError
             mode = 'pms';
-            test_suff=calc_suff_stats(obj.A,z,q,obj.pms);
-            status=test_suff_stats(suff_stats{1},test_suff,mode,obj.pms);
+            test_suff=calc_suff_stats(myGibbsChain.A,z,q,myGibbsChain.pms);
+            status=test_suff_stats(suff_stats{1},test_suff,mode,myGibbsChain.pms);
             if status == -1
-                obj.Tstart=l+1;
+                myGibbsChain.Tstart=l+1;
                 save(strcat('Output/ErrorRuns/error_',num2str(now),'.mat'))
                 display('suff_stat is wrong, data saved to output folder')
                 display('Ending Gibbs Sampler')
@@ -222,9 +230,9 @@ for l=obj.Tstart:obj.T
             end
         end
     end
-    obj.cpuTime(1,l+1) = cputime;
-    obj.wallTime(1,l) = toc;
-    fprintf('Sample: %d/%d - Time: %f \n',l,obj.T,sum(obj.wallTime(1,1:l)));
+    myGibbsChain.cpuTime(1,l+1) = cputime;
+    myGibbsChain.wallTime(1,l) = toc;
+    fprintf('Sample: %d/%d - Time: %f \n',l,myGibbsChain.T,sum(myGibbsChain.wallTime(1,1:l)));
 end
 
 

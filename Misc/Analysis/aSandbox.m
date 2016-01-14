@@ -2,18 +2,107 @@
 clear
 obs = 10; % No. of observations
 feas = 10; % No. of features
-concs = 5; % No. of concepts
+concs = 3; % No. of concepts
 
-bs = [100 400];
-rs = [100 400];
+bs = [1 2];
+rs = [1 2];
 
-pas = [1000000 0.01]; % pa_plus, pa_minus
-pbs = [0.01 1000000]; % pb_plus, pb_minus
+pas = [1 0.1]; % pa_plus, pa_minus
+pbs = [0.1 1]; % pb_plus, pb_minus
+rng(1)
+[A,zTrue,qTrue] = GenerateDataFromModel(obs,feas,concs,bs,rs,pas,pbs);
 
-[A,Z,Q] = GenerateDataFromModel(obs,feas,concs,bs,rs,pas,pbs);
+
+pms = [bs; rs; pas; pbs;];%Parameters
+%
+%pmsEstimate = [50 100; 50 100; 1000 0.1; 0.1 1000];
+%%
+myGibbsChain = GibbsChainData(A,1000,concs,2,pms,zTrue,qTrue);
+%
+%%
+activeGibbs=true;
+TestError = true;
+ConstrainedInt = true;
+activeHyper = true;
+
+myResults = GibbsSampler(myGibbsChain,activeGibbs,TestError,ConstrainedInt,activeHyper);
+%[dZ,dQ, logPs,inferred_pms] = GibbsSampler(A,1000,pms,concs,2,qTrue,zTrue);
+
+%lastIter = find(~cellfun('isempty',myGibbsChain.zSamples),1,'last');
+%CompareTrueSampleZQ(myGibbsChain.zTrue,myGibbsChain.qTrue,myGibbsChain.zSamples{lastIter},myGibbsChain.qSamples{lastIter})
+%lastIter = find(~cellfun('isempty',myResults.zSamples),1,'last');
+%CompareTrueSampleZQ(myResults.zTrue,myResults.qTrue,myResults.zSamples{lastIter},myResults.qSamples{lastIter})
+%% Load results
+%load('test_50_50_10_rng_2.mat')
+%load('test_100_100_25_rng_2.mat')
+
+% Plot results
+figure(1)
+clf
+[MAPP,MAPIterZ,MAPIterQ,iMax,jMax] = findMAP(myResults.logPs)
+CompareTrueSampleZQ(myResults.zTrue,myResults.qTrue,myResults.zSamples{MAPIterZ},myResults.qSamples{MAPIterQ})
+
+figure(2)
+clf
+AnalysisPlotHyperParameters
+
+figure(3)
+clf
+plot(myResults.logPs(3,:))
+hold on
+scatter(jMax,myResults.logPs(iMax,jMax),'filled')
+
+figure(4)
+clf
+logPversusHistogramofSamples
+
+%figure(5)
+%clf
+%logPcontributions
+
+%% New T
+clear
+load('hyperparameter_rerun_data.mat')
+%%
+myResults = myResults.updateT(5000);
+
+%%
+rng(2)
+
+activeGibbs=true;
+TestError = true;
+ConstrainedInt = true;
+activeHyper = true;
+hyperindex=[];%[1,2,3;2,0,0];
+
+myResults = GibbsSampler(myResults,activeGibbs,TestError,ConstrainedInt,activeHyper,hyperindex);
+
+%%
+save('Output/ErrorRuns/data_without_constrain.mat','myResults')
 
 
-pms = [bs; rs; pas; pbs;]; %Parameters
+%%
+predictiveDistribution(myResults.A,myResults.zSamples,Q,hyperpms,suffstats)
+
+%%
+figure(2)
+[MAPP,MAPIterZ,MAPIterQ] = findMAP(myResults.logPs)
+CompareTrueSampleZQ(myResults.zTrue,myResults.qTrue,myResults.zSamples{MAPIterZ},myResults.qSamples{MAPIterQ})
+
+%%
+figure(2)
+plot(myResults.logPs(2,1:10))
+%%
+myResults.zSamples{lastIter}
+myResults.qSamples{lastIter}
+%%
+
+logjointNaive(A,Z,Q,pms)
+
+clear LogJoint;
+suff_stats = SuffStatsClass;
+LogJoint(A,Z,Q,pms,suff_stats)
+
 
 %% plot data
 figure(2)
@@ -22,12 +111,8 @@ figure(3)
 imagesc(A(Z_idx,Q_idx))
 
 %% Create missing data
-
 Percent = 0.05
 A(randperm(numel(A),round(numel(A)*Percent))) = NaN
-
-
-
 
 %% Plots
 figure(1)
@@ -45,11 +130,9 @@ axis image
 %plotAB(A(Z_idx,Q_idx),Z,Q)
 
 %% Joint fordeling
-
-
 pms = [bs; rs; pas; pbs;]; %Parameters
 %%
-prob = logjoint(A,Z,Q,pms)
+prob = LogJoint(A,Z,Q,pms)
 
 %% Gibbs
 

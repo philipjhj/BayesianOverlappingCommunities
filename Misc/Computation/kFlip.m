@@ -1,4 +1,4 @@
-function [rand_idx,permutations,perm_changes,full_shadow,perm_order]=k_flip2(matrix1,matrix2_row,k)
+function [rand_idx,permutations,perm_changes,full_shadow,perm_order]= kFlip(matrix1,matrix2_row,k)
 % Given a matrix1, k random indices are sampled and
 % the order of "easiest-to-calculate" permutations is found
 % for these indices in the opposit matrix (matrix2_row)

@@ -1,4 +1,4 @@
-function reconstructionA = predictiveDistribution(A,Z,Q,hyperpms,suffstats)
+function reconstructionA = predictiveDistribution(A,Z,Q,hyperpms,suff_stats)
 
 T=numel(Z);
 nNan = numel(find(isnan(A)));

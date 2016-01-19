@@ -53,16 +53,16 @@ for l=obj.Tstart:obj.T
             dQ(i,rand_idx) = perms(1,:);
             prev_q = q;
             if l == 1 && i == 1 %|| 0<length(perm_diff{1})
-                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(obj.NotConstrained,obj.A,z,dQ,obj.pms,suff_stats{1});
+                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(obj.Constrained,obj.A,z,dQ,obj.pms,suff_stats{1});
                 prev_q = dQ;
             elseif ~isempty(perm_diff{1})
-                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(obj.NotConstrained,obj.A,z,dQ,obj.pms,suff_stats{1},'q',i,perm_diff{1},full_shadow{1},NZQ{1},prev_q);
+                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(obj.Constrained,obj.A,z,dQ,obj.pms,suff_stats{1},'q',i,perm_diff{1},full_shadow{1},NZQ{1},prev_q);
                 prev_q = dQ;
             end
             
             for flip = 2:no_perm
                 dQ(i,rand_idx) = perms(flip,:);
-                [logP(flip), NZQ{flip},suff_stats{flip}] = LogJoint(obj.NotConstrained,obj.A,z,dQ,obj.pms,suff_stats{flip-1},['q'],i,perm_diff{flip},full_shadow{flip},NZQ{flip-1},prev_q);
+                [logP(flip), NZQ{flip},suff_stats{flip}] = LogJoint(obj.Constrained,obj.A,z,dQ,obj.pms,suff_stats{flip-1},['q'],i,perm_diff{flip},full_shadow{flip},NZQ{flip-1},prev_q);
                 if isnan(logP(flip))
                     disp(cumsum(P)/sum(P))
                     disp(P)
@@ -117,13 +117,13 @@ for l=obj.Tstart:obj.T
             dZ(i,rand_idx) = perms(1,:);
             prev_z = z;
             if ~isempty(perm_diff{1})
-                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(obj.NotConstrained,obj.A,dZ,q,obj.pms,suff_stats{1},'z',i,perm_diff{1},full_shadow{1},NZQ{1},prev_z);
+                [logP(1), NZQ{1},suff_stats{1}] = LogJoint(obj.Constrained,obj.A,dZ,q,obj.pms,suff_stats{1},'z',i,perm_diff{1},full_shadow{1},NZQ{1},prev_z);
                 prev_z = dZ;
             end
             
             for flip = 2:no_perm
                 dZ(i,rand_idx) = perms(flip,:);
-                [logP(flip), NZQ{flip},suff_stats{flip}] = LogJoint(obj.NotConstrained,obj.A,dZ,q,obj.pms,suff_stats{flip-1},['z'],i,perm_diff{flip},full_shadow{flip},NZQ{flip-1},prev_z);
+                [logP(flip), NZQ{flip},suff_stats{flip}] = LogJoint(obj.Constrained,obj.A,dZ,q,obj.pms,suff_stats{flip-1},['z'],i,perm_diff{flip},full_shadow{flip},NZQ{flip-1},prev_z);
                 prev_z = dZ;
             end
             
@@ -179,9 +179,9 @@ for l=obj.Tstart:obj.T
                     pms_new(i,j)=exp(pm_log_new);
                     if l == obj.Tstart && obj.ActiveGibbs==false && ~firstDone %|| 0<length(perm_diff{1})
                         firstDone = true;
-                        [logP(1), NZQ{1},suff_stats{1}] = LogJoint(obj.NotConstrained,obj.A,z,q,obj.pms,suff_stats{1});
+                        [logP(1), NZQ{1},suff_stats{1}] = LogJoint(obj.Constrained,obj.A,z,q,obj.pms,suff_stats{1});
                     end
-                    [logP(2), NZQ{2}, suff_stats{2}] = LogJoint(obj.NotConstrained,obj.A,z,q,pms_new,suff_stats{1},'pms',i,j,[],NZQ{1},obj.pms);
+                    [logP(2), NZQ{2}, suff_stats{2}] = LogJoint(obj.Constrained,obj.A,z,q,pms_new,suff_stats{1},'pms',i,j,[],NZQ{1},obj.pms);
                     %fprintf(fid,'iteration: %d, idx1: %d, idx2: %d, difference: \t%f\t%f\n',l,i,j,logP(2)-logjoint(A,z,q,pms_new,suff_stats{1}),logP(1)-logjoint(A,z,q,pms));
                     %accept_ratio = exp(logP(2))/exp(logP(1));
                     P=exp(logP(1:2)-max(logP(1:2)));
@@ -203,6 +203,7 @@ for l=obj.Tstart:obj.T
         obj.pmsSamples{l} = obj.pms;
         obj.logPs(3,l) = logP(1);
         obj.SuffStatAll{l} = suff_stats{1};
+        % Keep cache storage reasonable
         obj.SuffStatAll{l}.NPap = nan;
         obj.SuffStatAll{l}.NPam = nan;
         obj.SuffStatAll{l}.NPbp = nan;

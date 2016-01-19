@@ -1,4 +1,4 @@
-function [logprob,NZQ,suff_stats] = LogJoint(NotConstrained,A,Z,Q,pms,suff_stats,mode,iter,perm_diff,shadow,NZQ,M_prev)
+function [logprob,NZQ,suff_stats] = LogJoint(Constrained,A,Z,Q,pms,suff_stats,mode,iter,perm_diff,shadow,NZQ,M_prev)
 % Given a matrix A with its corresponding observation X concept matrix
 % Z and feature X concept matrix Q, this function calculates
 % the probability of this combination given the parameters.
@@ -18,7 +18,7 @@ end
 %     return
 % end
 
-NotConstrained = ~NotConstrained;
+%NotConstrained = ~NotConstrained;
 
 persistent no_obs
 persistent no_feats
@@ -79,7 +79,7 @@ if isempty(suff_stats.NPap)
     suff_stats.NPbps = sum(suff_stats.NPbp)'+pms(4,1);
     suff_stats.NPbms = sum(suff_stats.NPbm)'+pms(4,2);
     
-    if NotConstrained
+    if ~Constrained
         suff_stats.betasuff_AZQ = betaln(suff_stats.NPaps,suff_stats.NPams)+betaln(suff_stats.NPbps,suff_stats.NPbms);
     else
         suff_stats.betasuff_AZQ = betaintegral_noverbose(suff_stats.NPaps,suff_stats.NPams,suff_stats.NPbps,suff_stats.NPbms,50000);
@@ -143,7 +143,7 @@ elseif mode(1) == 'z'
         suff_stats.NPbps(shadow) = suff_stats.NPbps(shadow)+suff_stats.NPbp(i,shadow)'-NPbp_old';
         suff_stats.NPbms(shadow) = suff_stats.NPbms(shadow)+suff_stats.NPbm(i,shadow)'-NPbm_old';
         
-        if NotConstrained
+        if ~Constrained
             suff_stats.betasuff_AZQ(shadow) = betaln(suff_stats.NPaps(shadow),suff_stats.NPams(shadow))+betaln(suff_stats.NPbps(shadow),suff_stats.NPbms(shadow));
         else
             suff_stats.betasuff_AZQ(shadow) = betaintegral_noverbose(suff_stats.NPaps(shadow),suff_stats.NPams(shadow),suff_stats.NPbps(shadow),suff_stats.NPbms(shadow),50000);
@@ -208,7 +208,7 @@ elseif mode(1) == 'q'
         suff_stats.NPbps(j) = suff_stats.NPbps(j)+sum(suff_stats.NPbp(shadow,j)-NPbp_old);
         suff_stats.NPbms(j) = suff_stats.NPbms(j)+sum(suff_stats.NPbm(shadow,j)-NPbm_old);
         
-        if NotConstrained
+        if ~Constrained
             suff_stats.betasuff_AZQ(j) = betaln(suff_stats.NPaps(j),suff_stats.NPams(j))+betaln(suff_stats.NPbps(j),suff_stats.NPbms(j));
         else
             suff_stats.betasuff_AZQ(j) = betaintegral_noverbose(suff_stats.NPaps(j),suff_stats.NPams(j),suff_stats.NPbps(j),suff_stats.NPbms(j),50000);
@@ -279,7 +279,7 @@ elseif mode(1) == 'p'
         suff_stats.betahyper_ZQ = betaln(pms(1,1),pms(1,2))+betaln(pms(2,1),pms(2,2));
     else
         suff_stats.betahyper_probs = betaln(pms(3,1),pms(3,2))+betaln(pms(4,1),pms(4,2));
-        if NotConstrained
+        if ~Constrained
             suff_stats.betasuff_AZQ = betaln(suff_stats.NPaps,suff_stats.NPams)+betaln(suff_stats.NPbps,suff_stats.NPbms);
         else
             suff_stats.betasuff_AZQ = betaintegral_noverbose(suff_stats.NPaps,suff_stats.NPams,suff_stats.NPbps,suff_stats.NPbms,50000);

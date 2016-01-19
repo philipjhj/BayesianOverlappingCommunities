@@ -94,14 +94,15 @@ for k=1:nmodes
     str(((k-1)*8)+1:((k-1)*8)+8)='%12.0f |';        
     str2b=[str2b ['noc' num2str(k) ' ']];
 end
-if verbose % Display algorithm    
-    disp(['Non-parametric N-wa clustering based on the IRM model for Binary or Weighted graphs'])
-    dheader = sprintf(['%12s | %12s | %12s | ' str2a ' %12s | %12s'],'Iteration','logP','dlogP/|logP|',str2b,'time');
-    dline = sprintf('-------------+--------------+--------------+--------------+--------------+--------------');
-    disp(dline);
-    disp(dheader);
-    disp(dline);
-end
+verbose = 0;
+% if verbose % Display algorithm    
+%     disp(['Non-parametric N-wa clustering based on the IRM model for Binary or Weighted graphs'])
+%     dheader = sprintf(['%12s | %12s | %12s | ' str2a ' %12s | %12s'],'Iteration','logP','dlogP/|logP|',str2b,'time');
+%     dline = sprintf('-------------+--------------+--------------+--------------+--------------+--------------');
+%     disp(dline);
+%     disp(dheader);
+%     disp(dline);
+% end
 
 
 % Main Loop
@@ -151,7 +152,7 @@ while iter<maxiter
    
     % Display iteration
     if rem(iter,1)==0 && verbose        
-        disp(sprintf(['%12.0f | %12.4e | %12.4e |' str ' %12.4f '],iter,Q,dQ/abs(Q),noc,t_iter));
+%         disp(sprintf(['%12.0f | %12.4e | %12.4e |' str ' %12.4f '],iter,Q,dQ/abs(Q),noc,t_iter));
     end
     
     % Ztore sample
@@ -178,7 +179,7 @@ while iter<maxiter
     if iter>maxiter-nsampleiter && nnzW>0
         westiter=westiter+1;        
         if iter==maxiter-nsampleiter+1
-            disp(['Initiating estimation of missing links for the last ' num2str(nsampleiter) ' iterations']);   
+%             disp(['Initiating estimation of missing links for the last ' num2str(nsampleiter) ' iterations']);   
         end      
         step=10000;
         [Iw,Jw]=find(Wm);
@@ -198,8 +199,8 @@ if nnzW>0
 end
 % Display final iteration
 if verbose   
-  disp('Result of final iteration');
-  disp(sprintf('%12.0f | %12.4e | %12.4e | %12.0f | %12.0f |%12.4f ',iter,Q,dQ/abs(Q),noc(1),noc(2),t_iter));
+%   disp('Result of final iteration');
+%   disp(sprintf('%12.0f | %12.4e | %12.4e | %12.0f | %12.0f |%12.4f ',iter,Q,dQ/abs(Q),noc(1),noc(2),t_iter));
 end
 
 % -------------------------------------------------------------------------
@@ -292,7 +293,7 @@ function [Z2,logP_A,logP_Z2]=split_merge_sample_Z(Z2,Z1,A,W,eta0,alpha,logP_A,lo
         % Calculate Metropolis-Hastings ratio
         a_split=rand<exp(logP_A_t+logP_Z2_t-logP_A-logP_Z2-logQ_trans);         
         if a_split
-           disp(['Splitting cluster'])
+%            disp(['Splitting cluster'])
            logP_A=logP_A_t;
            logP_Z2=logP_Z2_t;
            Z2=Z2_t;
@@ -334,7 +335,7 @@ function [Z2,logP_A,logP_Z2]=split_merge_sample_Z(Z2,Z1,A,W,eta0,alpha,logP_A,lo
         a_merge=rand<exp(logP_A_t+logP_Z2_t-logP_A-logP_Z2+logQ_trans); 
         
         if a_merge
-          disp(['Merging cluster'])
+%           disp(['Merging cluster'])
           logP_A=logP_A_t;
           logP_Z2=logP_Z2_t;
           Z2=Z2_t;          
@@ -435,7 +436,7 @@ function [Z2,logP_A,logP_Z2,logQ_trans,comp]=Gibbs_sample_ZIRM(Z2,Z1,A,W,eta0,al
     for k=JJ           
         t=t+1;
         if mod(t,5000)==0
-            disp(['sampling ' num2str(t) ' out of ' num2str(J) ' nodes']);
+%             disp(['sampling ' num2str(t) ' out of ' num2str(J) ' nodes']);
         end
         
         % Remove effect of Z2(:,k)        
@@ -657,5 +658,5 @@ for sample_iter=1:max_iter
         accept=accept+1;       
     end
 end
- disp(['accepted ' num2str(accept) ' out of ' num2str(max_iter) ' samples for eta0']);
+%  disp(['accepted ' num2str(accept) ' out of ' num2str(max_iter) ' samples for eta0']);
         

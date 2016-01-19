@@ -4,14 +4,9 @@ col = hsv(8);
 for i = 1:4
     for j = 1:2
         mySuffStats = SuffStatsClass;
-        
         current_pms = myResults.pmsSamples{end};
         logMid=log(current_pms(i,j))/log(10);
-        test_values=logspace(logMid-0.1, logMid+0.1)
-        %test_values_log = logMid+[-logspace(0,0.01) +logspace(0,0.01)];
-        %test_values = exp(test_values_log);
-        %i=4;
-        %j=2;
+        test_values=logspace(logMid-0.1, logMid+0.1);
         pmsAll = repmat(current_pms,1,1,numel(test_values));
         pmsAll(i,j,:) = test_values;
         

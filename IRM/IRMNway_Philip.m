@@ -1,4 +1,4 @@
-function [L,cpu_time,Z,eta,sample,West]=IRMNway(A,W,noc,opts)
+function [L,cpu_time,Z,eta,sample,West]=IRMNway_Philip(A,W,noc,opts)
 
 % Non-parametric IRM of N-partite graphs based on collapsed Gibbs sampling with split
 % merge moves. The method includes sampling of hyper-parameters.
@@ -69,7 +69,7 @@ else
     alpha=log(size(A));
 end
 maxiter=mgetopt(opts,'maxiter',50);
-verbose=mgetopt(opts,'verbose',1);
+verbose=0;%mgetopt(opts,'verbose',1);
 switch par.type
     case 'Binary'
         eta0=mgetopt(opts,'eta0',[1 1]); % pseudo counts of links and non-links between clusters

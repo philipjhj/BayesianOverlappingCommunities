@@ -1,17 +1,42 @@
 % This script contains code to generated results
 
-
 %% Davis *********
+for i = 3
+  %  load(strcat(['C:\Users\Philip H. Jorgensen\Documents\MATLAB\bayensianas'...
+   %     'sociationmining\Output\davis_d5_k3_run'],int2str(i),'.mat'));
+     load(strcat(['C:\Users\Philip H. Jorgensen\Documents\MATLAB\bayensianas'...
+        'sociationmining\Output\AWA_d30_k3_run'],int2str(i),'.mat'));
+%     load(strcat(['C:\Users\Philip H. Jorgensen\Documents\MATLAB\'...
+%     'bayensianassociationmining\Output\drugs_d20_k3_run'],int2str(i),'.mat'));
+% 
+%     gibbs.zLabels = women;
+%     gibbs.qLabels = events;
 
-load('C:\Users\Philip H. Jorgensen\Documents\MATLAB\bayensianassociationmining\Output\davis_d5_k3_run2.mat')
-gibbs.zLabels = women
-gibbs.qLabels = events
-figure(1)
-gibbs.plotASorted
-figure(2)
-gibbs.CompareTrueSampleZQ
-figure(3)
-gibbs.plotChains
+    gibbs.zLabels = animals;
+    gibbs.qLabels = predicates;
+    
+%     gibbs.zLabels = drug_list;
+%     gibbs.qLabels = se_list;
+
+    gibbs = gibbs.PosteriorPredictive;
+    gibbs = gibbs.computeAUC;
+    gibbs.AUC
+
+    figure(1)
+    gibbs.plotASorted
+    figure(2)
+    gibbs.CompareTrueSampleZQ(1,2)
+    figure(3)
+    gibbs.CompareTrueSampleZQ(0,2)
+    figure(4)
+    clf
+    try
+        gibbs.plotChains
+    catch
+        
+    end
+    pause(2)
+end
 
 
 %% Synthetic **********

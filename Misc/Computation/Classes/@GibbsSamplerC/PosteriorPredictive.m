@@ -21,10 +21,10 @@ for t = (burnin+1):obj.T
         b=(sum(betaintegral_noverbose(ninp,ninm,noutp+1,noutm)));
         c=(sum(betaintegral_noverbose(ninp,ninm,noutp,noutm)));
 %         
-       paSum(j) = exp(a)/exp(c);
-       pbSum(j) = exp(b)/exp(c);
-%        paSum(j) = exp(a-c);
-%        pbSum(j) = exp(b-c);
+%        paSum(j) = exp(a)/exp(c);
+%        pbSum(j) = exp(b)/exp(c);
+       paSum(j) = exp(a-c);
+       pbSum(j) = exp(b-c);
 %         myJ = find(j==(1:nFeas));
 %         for s = 1:S
 %             pa = 0;

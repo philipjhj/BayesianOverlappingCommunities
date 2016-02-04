@@ -47,11 +47,11 @@ classdef GibbsSamplerC
                 obj.dTrue = 3; % No. of concepts
                 obj.k = 2; % No. used in k-flip
                 
-                bs = [10 10];
-                rs = [10 10];
+                bs = [1 2];
+                rs = [1 2];
                 
-                pas = [1 0.1]; % pa_plus, pa_minus
-                pbs = [0.1 1]; % pb_plus, pb_minus
+                pas = [100 0.1]; % pa_plus, pa_minus
+                pbs = [0.1 100]; % pb_plus, pb_minus
                 rng(A)
                 [obj.A,obj.zTrue,obj.qTrue] = GenerateDataFromModel(obs,feas,obj.dTrue,bs,rs,pas,pbs);
                 obj.pmsTrue = [bs; rs; pas; pbs;];%Parameters
@@ -75,7 +75,7 @@ classdef GibbsSamplerC
             end
             obj.PostPredDistMat = zeros(size(obj.A));
             obj.Atrue = obj.A;
-            %rng('shuffle')
+            rng('shuffle')
         end
         
         % CLASS FUNCTIONS (EXTERNAL/CLASSFOLDER) ************
@@ -161,50 +161,52 @@ classdef GibbsSamplerC
         end
         
         function plotChains(obj)
-            subplot(6,4,[1:8])
+%             subplot(6,4,[1:8])
             plot(obj.logPs(3,:))
             [MAPP,MAPSampleZ,MAPSampleQ,~,jMax] = obj.findMAP;
             hold on
             scatter(jMax,MAPP,'filled','r')
             hold off
-            % plot hyperparameters
-            subplot(6,4,9:16)
-            hold on
-            pms_data = cat(3,obj.pmsSamples{:});
-            
-            
-            col = hsv(8);
-            range = 1:numel(pms_data(1,1,:));
-            for i = 1:size(obj.pms,1)
-                for j = 1:size(obj.pms,2)
-                    plot(log(reshape(pms_data(i,j,range),1,...
-                        numel(pms_data(i,j,range)))),'color'...
-                        ,col(sub2ind([2,4],j,i),:),'linewidth',1)
-                end
-            end
-            hold off
-            %% and logP(pms) individually at MAP
-            col = hsv(8);
-            sbplts = 17:24;
-            for i = 1:4
-                for j = 1:2
-                    mySuffStats = SuffStatsClass;
-                    MAPpms = obj.pmsSamples{jMax};
-                    logMid=log(MAPpms(i,j))/log(10);
-                    test_values=logspace(logMid-0.1, logMid+0.1);
-                    pmsAll = repmat(MAPpms,1,1,numel(test_values));
-                    pmsAll(i,j,:) = test_values;
-                    logPs = zeros(1,numel(test_values));
-                    for k = 1:numel(test_values)
-                        logPs(k)=LogJoint(true,obj.Atrue,obj.zSamples{MAPSampleZ},...
-                            obj.qSamples{MAPSampleQ},pmsAll(:,:,k),mySuffStats);
-                    end
-                    subplot(6,4,sbplts((j-1)*4+i));
-                    %yy = exp(logPs)./(trapz(exp(logPs)));
-                    yy = logPs;
-                    plot((test_values),yy,'linewidth',2,'color',col(sub2ind([2,4],j,i),:))
-                end
-            end
+            xlabel('Iterations')
+            ylabel('Log-likelihood')
+%             % plot hyperparameters
+%             subplot(6,4,9:16)
+%             hold on
+%             pms_data = cat(3,obj.pmsSamples{:});
+%             
+%             
+%             col = hsv(8);
+%             range = 1:numel(pms_data(1,1,:));
+%             for i = 1:size(obj.pms,1)
+%                 for j = 1:size(obj.pms,2)
+%                     plot(log(reshape(pms_data(i,j,range),1,...
+%                         numel(pms_data(i,j,range)))),'color'...
+%                         ,col(sub2ind([2,4],j,i),:),'linewidth',1)
+%                 end
+%             end
+%             hold off
+%             %% and logP(pms) individually at MAP
+%             col = hsv(8);
+%             sbplts = 17:24;
+%             for i = 1:4
+%                 for j = 1:2
+%                     mySuffStats = SuffStatsClass;
+%                     MAPpms = obj.pmsSamples{jMax};
+%                     logMid=log(MAPpms(i,j))/log(10);
+%                     test_values=logspace(logMid-0.1, logMid+0.1);
+%                     pmsAll = repmat(MAPpms,1,1,numel(test_values));
+%                     pmsAll(i,j,:) = test_values;
+%                     logPs = zeros(1,numel(test_values));
+%                     for k = 1:numel(test_values)
+%                         logPs(k)=LogJoint(true,obj.Atrue,obj.zSamples{MAPSampleZ},...
+%                             obj.qSamples{MAPSampleQ},pmsAll(:,:,k),mySuffStats);
+%                     end
+%                     subplot(6,4,sbplts((j-1)*4+i));
+%                     %yy = exp(logPs)./(trapz(exp(logPs)));
+%                     yy = logPs;
+%                     plot((test_values),yy,'linewidth',2,'color',col(sub2ind([2,4],j,i),:))
+%                 end
+%             end
         end
         
         function obj = computeAUC(obj)
@@ -212,8 +214,14 @@ classdef GibbsSamplerC
                 disp('Compute Posterior Predictive Distribuiton first')
                 disp('Use method ''PosteriorPredictive''')
             end
+            md = obj.MissingData;
+            if isempty(md)
             [~,~,~,obj.AUC] = perfcurve(reshape(obj.Atrue,1,numel(obj.Atrue)),...
                 reshape(obj.PostPredDistMat,1,numel(obj.PostPredDistMat)),1);
+            else
+                [~,~,~,obj.AUC] = perfcurve(reshape(obj.Atrue(md),1,numel(obj.Atrue(md))),...
+                reshape(obj.PostPredDistMat(md),1,numel(obj.PostPredDistMat(md))),1);
+            end
         end
         
         function plotASorted(obj)
@@ -222,6 +230,10 @@ classdef GibbsSamplerC
             qMAP = obj.qSamples{MAPSampleQ};
             [~, idx_obj_Z, ~] = sort_matrix(zMAP,1);
             [~, idx_obj_Q, ~] = sort_matrix(qMAP,1);
+            
+            subplot(2,1,1)
+            imagesc(obj.Atrue)
+            subplot(2,1,2)
             
             imagesc(obj.Atrue(idx_obj_Z,idx_obj_Q))
             

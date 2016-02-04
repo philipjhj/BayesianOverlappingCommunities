@@ -1,14 +1,17 @@
 % TEST SAMPLER on leave-one-out
 % Config: (10x10x3, rng(1), 100 samples, 0.5 burnin)
-gibbs = GibbsSamplerC(1)
+% gibbs = GibbsSamplerC(2)
+load('C:\Users\Philip H. Jorgensen\Documents\MATLAB\bayensianassociationmining\Data\davis\davis.mat')
+
+gibbs = GibbsSamplerC(A,5,3)
 gibbs.verbose = 0
-gibbs=gibbs.LeaveOneOut(100)
+gibbs=gibbs.LeaveOneOut(50)
 
 gibbs=gibbs.computeAUC;
 gibbs.AUC
 %% Test generation of data
 % for i = 1:20
-myrng=1;
+myrng=2;
 gibbs = GibbsSamplerC(myrng)
 figure(4)
 subplot(2,2,[1 3])

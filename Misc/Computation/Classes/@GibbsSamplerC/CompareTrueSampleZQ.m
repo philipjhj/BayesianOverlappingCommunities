@@ -10,8 +10,8 @@ if MAP
     zMAP = obj.zSamples{MAPSampleZ};
     qMAP = obj.qSamples{MAPSampleQ};
     if mymode==1
-        [zTrue] = sort_matrix(obj.zTrue,1);
-        [qTrue] = sort_matrix(obj.qTrue,1);
+        [zTrue, idx_o_Zt, idx_f_Zt] = sort_matrix(obj.zTrue,1);
+        [qTrue, idx_o_Qt, idx_f_Qt] = sort_matrix(obj.qTrue,1);
     end
     [zMAP, idx_obj_Z, idx_fea_Z] = sort_matrix(zMAP,1);
     [qMAP, idx_obj_Q, idx_fea_Q] = sort_matrix(qMAP,1);
@@ -25,34 +25,39 @@ else
         subplot(2,2,2)
         imagesc(obj.qTrue)
     else
-        subplt = [121 122];
+        subplt = [211 212];
     end
     subplot(subplt(1))
     imagesc(zMAP,[0 1])
     set(gca,'YTick',1:size(zMAP,1));
     set(gca,'XTick',1:size(zMAP,2));
-    if MAP
-        set(gca,'XTickLabel',idx_fea_Z);
-        if ~isempty(zLabels)
-            set(gca,'YTickLabel',zLabels(idx_obj_Z));
-        else
-            set(gca,'YTickLabel',idx_obj_Z);
-        end
+    if ~MAP
+        idx_obj_Z = 1:size(zMAP,1);
+        idx_fea_Z = 1:size(zMAP,2);
     end
-    colorbar
+    set(gca,'XTickLabel',idx_fea_Z);
+    if ~isempty(zLabels)
+        set(gca,'YTickLabel',zLabels(idx_obj_Z));
+    else
+        set(gca,'YTickLabel',idx_obj_Z);
+    end
+    
+    %colorbar
     subplot(subplt(2))
     imagesc(qMAP,[0 1])
     set(gca,'YTick',1:size(qMAP,1));
     set(gca,'XTick',1:size(qMAP,2));
-    if MAP
-        set(gca,'XTickLabel',idx_fea_Q);
-        if ~isempty(qLabels)
-            set(gca,'YTickLabel',qLabels(idx_obj_Q));
-        else
-            set(gca,'YTickLabel',idx_obj_Q);
-        end
+    if ~MAP
+        idx_obj_Q = 1:size(qMAP,1);
+        idx_fea_Q = 1:size(qMAP,2);
     end
-    colorbar
+    set(gca,'XTickLabel',idx_fea_Q);
+    if ~isempty(qLabels)
+        set(gca,'YTickLabel',qLabels(idx_obj_Q));
+    else
+        set(gca,'YTickLabel',idx_obj_Q);
+    end
+    %colorbar
     return
 end
 
@@ -84,8 +89,8 @@ if mymode == 1
     subplt(2) = 223;
     subplt(4) = 224;
 elseif mymode == 2
-    subplt(2) = 211;
-    subplt(4) = 212;
+    subplt(2) = 121;
+    subplt(4) = 122;
 end
 
 
@@ -93,13 +98,17 @@ end
 if mymode == 1
     subplot(subplt(1))
     imagesc(zTrue)
-    title('True Z')
+    title('(a)')
     set(gca,'YTick',1:size(zTrue,1));
     set(gca,'XTick',1:size(zTrue,2));
+    set(gca,'XTickLabel',idx_f_Zt);
     if ~isempty(zLabels)
-        set(gca,'YTickLabel',zLabels);
+        set(gca,'YTickLabel',zLabels(idx_o_Zt));
+    else
+        set(gca,'YTickLabel',idx_o_Zt);
     end
-elseif any(mymode == [1 2])
+end
+if any(mymode == [1 2])
     
     subplot(subplt(2))
     imagesc(zMAP,[0 1])
@@ -112,24 +121,27 @@ elseif any(mymode == [1 2])
         set(gca,'YTickLabel',idx_obj_Z);
     end
     %set(gca,'YTickLabel',idx_obj_Z);
-    title(sprintf('MAP of Z at iteration: %d',MAPSampleZ))
+    %title(sprintf('MAP of Z at iteration: %d',MAPSampleZ))
+    title('(c)')
 end
 
 % Plot Q
 if mymode==1
     subplot(subplt(3))
     imagesc(qTrue)
-    title('True Q')
+    title('(b)')
     set(gca,'YTick',1:size(qTrue,1));
     set(gca,'XTick',1:size(qTrue,2));
     if ~isempty(qLabels)
         set(gca,'YTickLabel',qLabels);
     end
-elseif any(mymode == [1 2])
+end
+if any(mymode == [1 2])
     
     subplot(subplt(4))
     imagesc(qMAP,[0 1])
-    title(sprintf('MAP of Q at iteration: %d',MAPSampleQ))
+    %title(sprintf('MAP of Q at iteration: %d',MAPSampleQ))
+    title('(d)')
     set(gca,'YTick',1:size(qMAP,1));
     set(gca,'XTick',1:size(qMAP,2));
     set(gca,'XTickLabel',idx_fea_Q);

@@ -592,14 +592,14 @@ function [Z2,logP_A,logP_Z2,logQ_trans,comp]=Gibbs_sample_ZIRM(Z2,Z1,A,W,eta0,al
     %--------------------------------------------------------------------
 function [logZ,alpha]=sample_alpha(sumZ,N,alpha)
 
-max_iter=100;
+max_iter=20;
 K=length(sumZ);
 const=sum(gammaln(sumZ));
-logZ=K*log(alpha)+const-gammaln(N+alpha)+gammaln(alpha);
+logZ=K*log(alpha)+const-gammaln(N+alpha)+gammaln(alpha)+K*(log(alpha)-alpha); % Eq. (20)
 accept=0;
 for sample_iter=1:max_iter  
     alpha_new=exp(log(alpha)+0.1*randn); % symmetric proposal distribution in log-domain (use change of variable in acceptance rate alpha_new/alpha) 
-    logZ_new=K*log(alpha_new)+const-gammaln(N+alpha_new)+gammaln(alpha_new); 
+    logZ_new=K*log(alpha_new)+const-gammaln(N+alpha_new)+gammaln(alpha_new)+K*(log(alpha)-alpha); 
     if rand<(alpha_new/alpha*exp(logZ_new-logZ))
         alpha=alpha_new;
         logZ=logZ_new;
@@ -636,26 +636,30 @@ end
 
 n_link=n_link_noeta0+eta0(1);
 n_nonlink=n_nonlink_noeta0+eta0(2);
-logP=sum(sum(my_func(n_link,n_nonlink)))-noc1*noc2*const;     
+logP=sum(sum(my_func(n_link,n_nonlink)))-noc1*noc2*const+sum(log(eta0)-eta0);     
 accept=0;
 
-for sample_iter=1:max_iter           
-    eta0_new=exp(log(eta0)+0.1*randn(1,2)); % symmetric proposal distribution in log-domain (use change of variable in acceptance rate alpha_new/alpha)                         
-    const_new=my_func(eta0_new(1),eta0_new(2));                                   
-    n_link_new=n_link_noeta0+eta0_new(1);
-    n_nonlink_new=n_nonlink_noeta0+eta0_new(2);
-    logP_new=sum(sum(my_func(n_link_new,n_nonlink_new)))-noc1*noc2*const_new;     
-    
-%     % Test code
-%     [logP_A_tmp,logP_Z2,ZAZt,ZWZt,sumZ2]=evalLikelihood(Z2,Z1,A,W,eta0,1,2,par);
-%     [logP_A_tmp_new,logP_Z2,ZAZt,ZWZt,sumZ2]=evalLikelihood(Z2,Z1,A,W,eta0_new,1,2,par);
-%     logP_A_tmp_new-logP_A_tmp
-%     logP_new-logP
-    
-    if rand<(eta0_new(1)/eta0(1)*eta0_new(2)/eta0(2)*exp(logP_new-logP))
-        eta0=eta0_new;
-        logP=logP_new;        
-        accept=accept+1;       
+for sample_iter=1:max_iter
+    for eta_iter = 1:numel(eta0)
+        eta0_new = eta0;
+        eta0_new(eta_iter)=exp(log(eta0(eta_iter))+0.1*randn(1)); % symmetric proposal distribution in log-domain (use change of variable in acceptance rate alpha_new/alpha)
+        
+        const_new=my_func(eta0_new(1),eta0_new(2));
+        n_link_new=n_link_noeta0+eta0_new(1);
+        n_nonlink_new=n_nonlink_noeta0+eta0_new(2);
+        logP_new=sum(sum(my_func(n_link_new,n_nonlink_new)))-noc1*noc2*const_new+sum(log(eta0_new)-eta0_new);
+        
+        %     % Test code
+        %     [logP_A_tmp,logP_Z2,ZAZt,ZWZt,sumZ2]=evalLikelihood(Z2,Z1,A,W,eta0,1,2,par);
+        %     [logP_A_tmp_new,logP_Z2,ZAZt,ZWZt,sumZ2]=evalLikelihood(Z2,Z1,A,W,eta0_new,1,2,par);
+        %     logP_A_tmp_new-logP_A_tmp
+        %     logP_new-logP
+        
+        if rand<(eta0_new(1)/eta0(1)*eta0_new(2)/eta0(2)*exp(logP_new-logP))
+            eta0=eta0_new;
+            logP=logP_new;
+            accept=accept+1;
+        end
     end
 end
 %  disp(['accepted ' num2str(accept) ' out of ' num2str(max_iter) ' samples for eta0']);

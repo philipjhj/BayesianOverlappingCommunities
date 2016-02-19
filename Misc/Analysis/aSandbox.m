@@ -1,23 +1,54 @@
 %% Intialize
-clear
-obs = 10; % No. of observations
-feas = 10; % No. of features
-concs = 3; % No. of concepts
+%clear
+for i = 1:10
+obs = 100; % No. of observations
+feas = 300; % No. of features
+concs = 20; % No. of concepts
 
-bs = [1 2];
-rs = [1 2];
+bs = [1 5];
+rs = [1 5];
 
 pas = [1 0.1]; % pa_plus, pa_minus
 pbs = [0.1 1]; % pb_plus, pb_minus
-rng(1)
+%rng(i)
 [A,zTrue,qTrue] = GenerateDataFromModel(obs,feas,concs,bs,rs,pas,pbs);
 
 
 pms = [bs; rs; pas; pbs;];%Parameters
 %
 %pmsEstimate = [50 100; 50 100; 1000 0.1; 0.1 1000];
+
+
+%
+figure(1)
+subplot(2,2,1:2)
+imagesc(A)
+subplot(2,2,3)
+imagesc(zTrue)
+subplot(2,2,4)
+imagesc(qTrue)
+
+
+myGibbsChain = GibbsSamplerC(A,concs,2,pms,zTrue,qTrue);
 %%
-myGibbsChain = GibbsChainData(A,1000,concs,2,pms,zTrue,qTrue);
+for i = 1:10
+myGibbs{i} = GibbsSamplerC(i);
+end
+
+%%
+figure(1)
+myGibbs{i}.plotZQ
+figure(2)
+myGibbs{i}.plotASorted
+pause(1)
+%end
+%%
+save('Data/generatedData/TestNumberOfComponentsStrong','myGibbs')
+%save('Data/generatedData/TestDataFromModelPerformanceNoisy','myGibbs')
+
+
+%%
+end
 %
 %%
 activeGibbs=true;

@@ -6,7 +6,7 @@ obj=obj.updateT(nSamples);
 % clears the persistent variables of the logjoint script
 clear LogJoint;
 
-if obj .k>obj.d
+if obj.k>obj.d
     error('the k-flip is bigger than the number of clusters')
 end
 no_perm = 2^obj.k;
@@ -16,12 +16,16 @@ nObs = size(obj.A,1); nFeats = size(obj.A,2);
 %logPs = nan(T,3);
 %pms_all = cell(1,T);
 %suff_stat_all = cell(1,T);
-%rng(1)
+%rng(1)cp
 %rng('shuffle')
 if isempty(obj.zSamples{1})
-    
-    z = randi([0 1],nObs,obj.d);%ones(no_obs,d);
-    q = randi([0 1],nFeats,obj.d);%ones(no_feats,d);
+    if obj.StartWithZQTrue
+       z = [obj.zTrue randi([0 1],nObs,max(obj.d-size(obj.zTrue,2),0))];
+       q = [obj.qTrue randi([0 1],nFeats,max(obj.d-size(obj.qTrue,2),0))];
+    else
+        z = randi([0 1],nObs,obj.d);%ones(no_obs,d);
+        q = randi([0 1],nFeats,obj.d);%ones(no_feats,d);
+    end
 else
     lastIter = find(~cellfun('isempty',obj.zSamples),1,'last');
     z = obj.zSamples{lastIter};

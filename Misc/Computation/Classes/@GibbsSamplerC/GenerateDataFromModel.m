@@ -1,4 +1,4 @@
-function [A,Z,Q] = GenerateDataFromModel(obs,feas,concs,bs,rs,pas,pbs)
+function [A,Z,Q,pa,pb,Bds,Rds] = GenerateDataFromModel(obs,feas,concs,bs,rs,pas,pbs)
 %GenerateGraph Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -20,13 +20,10 @@ Z = binornd(1,repmat(Bds,obs,1)); % Matrix: Observations X Concepts
 Q = binornd(1,repmat(Rds,feas,1)); % Matrix: Features x Concepts
 
 % Generates Graph
-A = zeros(obs,feas);
-for i = 1:obs
-    for j = 1:feas
-        ind = (0<Z(i,:)*Q(j,:)'); % indicator function
-        A(i,j) = binornd(1,pa(j)^(ind)*pb(j)^(1-ind));
-    end
-end
+%A = zeros(obs,feas);
+NZQ = (0<Z*Q');
+p = bsxfun(@times,NZQ,pa)+bsxfun(@times,1-NZQ,pa); % indicator function
+A = binornd(1,p);
 
 
 end

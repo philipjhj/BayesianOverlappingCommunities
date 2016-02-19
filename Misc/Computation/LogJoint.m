@@ -12,7 +12,7 @@ if nargin < 6
     shadow=[];
     M_prev=[];
 end
-% if nargin == 0, 
+% if nargin == 0,
 %     %load(..)
 %     %kald logjoing med de p
 %     return
@@ -35,15 +35,22 @@ if isempty(suff_stats.NPap)
     
     % #Concepts shared for observation i and feature j
     NZQ = Z*Q';
+    NZQt = NZQ>0;
+    
+    %Handle missing data (nans)
+    suff_stats.Ap = A;
+    suff_stats.Ap(isnan(A)) = 0;
+    suff_stats.An = 1-A;
+    suff_stats.An(isnan(A)) = 0;
     
     % #Elements that share concepts and are linked
-    suff_stats.NPap = A.*(0<NZQ);
+    suff_stats.NPap = suff_stats.Ap.*(NZQt);
     % #Elements that share concepts and aren't linked
-    suff_stats.NPam = (1-A).*(0<NZQ);
+    suff_stats.NPam = suff_stats.An.*(NZQt);
     % #Elements that does not share concepts and are linked
-    suff_stats.NPbp = A.*(1-(0<NZQ));
+    suff_stats.NPbp = suff_stats.Ap.*(1-NZQt);
     % #Elements that do not share concepts and aren't linked
-    suff_stats.NPbm = (1-A).*(1-(0<NZQ));
+    suff_stats.NPbm = suff_stats.An.*(1-NZQt);
     
     % prints to check for handling of missing data
     %[sum(suff_stats.NPap);
@@ -52,10 +59,10 @@ if isempty(suff_stats.NPap)
     %sum(suff_stats.NPbm)]'
     
     % Handle missing data (NaNs)
-    suff_stats.NPap(isnan(suff_stats.NPap)) = 0;
-    suff_stats.NPam(isnan(suff_stats.NPam)) = 0;
-    suff_stats.NPbp(isnan(suff_stats.NPbp)) = 0;
-    suff_stats.NPbm(isnan(suff_stats.NPbm)) = 0;
+%     suff_stats.NPap(isnan(suff_stats.NPap)) = 0;
+%     suff_stats.NPam(isnan(suff_stats.NPam)) = 0;
+%     suff_stats.NPbp(isnan(suff_stats.NPbp)) = 0;
+%     suff_stats.NPbm(isnan(suff_stats.NPbm)) = 0;
     
     suff_stats.NZp = sum(Z)'+ pms(1,1);
     suff_stats.NZm = no_obs-sum(Z)'+ pms(1,2);
@@ -104,7 +111,8 @@ elseif mode(1) == 'z'
     
     Z_diff = Z(i,d)-M_prev(i,d);
     if Z_diff ~= 0
-        NZQ(i,:) = NZQ(i,:)+sum(repmat(Z_diff,size(Q,1),1)'.*Q(:,d)',1);
+        NZQ(i,:) = NZQ(i,:)+sum(bsxfun(@times,Z_diff,Q(:,d)),2)';
+        %         NZQ(i,:) = NZQ(i,:)+sum(repmat(Z_diff,size(Q,1),1)'.*Q(:,d)',1);
     end
     
     % Find difference from previous state
@@ -120,22 +128,22 @@ elseif mode(1) == 'z'
         NPbm_old = suff_stats.NPbm(i,shadow);
         
         PZQ =(0<(NZQ(i,shadow)));
-        AZQ = A(i,shadow).*PZQ;
+        AZQ = suff_stats.Ap(i,shadow).*PZQ;
         
         % #Elements that share concepts and are linked
         suff_stats.NPap(i,shadow) = AZQ;
         % #Elements that share concepts and aren't linked
         suff_stats.NPam(i,shadow) = PZQ-AZQ;
         % #Elements that does not share concepts and are linked
-        suff_stats.NPbp(i,shadow) = A(i,shadow)-AZQ;
+        suff_stats.NPbp(i,shadow) = suff_stats.Ap(i,shadow)-AZQ;
         % #Elements that do not share concepts and aren't linked
-        suff_stats.NPbm(i,shadow) = AZQ+1-PZQ-A(i,shadow); %(1-A(i,:)).*(1-(0<(NZQ(i,:))));
+        suff_stats.NPbm(i,shadow) = AZQ+1-PZQ-suff_stats.Ap(i,shadow); %(1-A(i,:)).*(1-(0<(NZQ(i,:))));
         
-        % Handle missing data (NaNs)
-        suff_stats.NPap(isnan(suff_stats.NPap)) = 0;
-        suff_stats.NPam(isnan(suff_stats.NPam)) = 0;
-        suff_stats.NPbp(isnan(suff_stats.NPbp)) = 0;
-        suff_stats.NPbm(isnan(suff_stats.NPbm)) = 0;
+%         % Handle missing data (NaNs)
+%         suff_stats.NPap(isnan(suff_stats.NPap)) = 0;
+%         suff_stats.NPam(isnan(suff_stats.NPam)) = 0;
+%         suff_stats.NPbp(isnan(suff_stats.NPbp)) = 0;
+%         suff_stats.NPbm(isnan(suff_stats.NPbm)) = 0;
         
         
         suff_stats.NPaps(shadow) = suff_stats.NPaps(shadow)+suff_stats.NPap(i,shadow)'-NPap_old';
@@ -168,7 +176,9 @@ elseif mode(1) == 'q'
     
     Q_diff=Q(j,d)-M_prev(j,d);
     if Q_diff ~= 0
-        NZQ(:,j) = NZQ(:,j)+sum(Z(:,d).*repmat(Q_diff,size(Z,1),1),2);
+        
+        NZQ(:,j) = NZQ(:,j)+sum(bsxfun(@times,Z(:,d),Q_diff),2);
+        %         NZQ(:,j) = NZQ(:,j)+sum(Z(:,d).*repmat(Q_diff,size(Z,1),1),2);
     end
     
     
@@ -185,23 +195,23 @@ elseif mode(1) == 'q'
         NPbm_old = suff_stats.NPbm(shadow,j);
         
         PZQ =(0<(NZQ(shadow,j)));
-        AZQ = A(shadow,j).*PZQ;
+        AZQ = suff_stats.Ap(shadow,j).*PZQ;
         
         % #Elements that share concepts and are linked
         suff_stats.NPap(shadow,j) = AZQ;
         % #Elements that share concepts and aren't linked
         suff_stats.NPam(shadow,j) = PZQ-AZQ;
         % #Elements that does not share concepts and are linked
-        suff_stats.NPbp(shadow,j) = A(shadow,j)-AZQ;
+        suff_stats.NPbp(shadow,j) = suff_stats.Ap(shadow,j)-AZQ;
         % #Elements that do not share concepts and aren't linked
-        suff_stats.NPbm(shadow,j) = AZQ+1-PZQ-A(shadow,j); %(1-A(i,:)).*(1-(0<(NZQ(i,:))));
+        suff_stats.NPbm(shadow,j) = AZQ+1-PZQ-suff_stats.Ap(shadow,j); %(1-A(i,:)).*(1-(0<(NZQ(i,:))));
         
-        % Handle missing data (NaNs)
-        suff_stats.NPap(isnan(suff_stats.NPap)) = 0;
-        suff_stats.NPam(isnan(suff_stats.NPam)) = 0;
-        suff_stats.NPbp(isnan(suff_stats.NPbp)) = 0;
-        suff_stats.NPbm(isnan(suff_stats.NPbm)) = 0;
-        
+%         % Handle missing data (NaNs)
+%         suff_stats.NPap(isnan(suff_stats.NPap)) = 0;
+%         suff_stats.NPam(isnan(suff_stats.NPam)) = 0;
+%         suff_stats.NPbp(isnan(suff_stats.NPbp)) = 0;
+%         suff_stats.NPbm(isnan(suff_stats.NPbm)) = 0;
+%         
         
         suff_stats.NPaps(j) = suff_stats.NPaps(j)+sum(suff_stats.NPap(shadow,j)-NPap_old);
         suff_stats.NPams(j) = suff_stats.NPams(j)+sum(suff_stats.NPam(shadow,j)-NPam_old);
@@ -212,10 +222,10 @@ elseif mode(1) == 'q'
             suff_stats.betasuff_AZQ(j) = betaln(suff_stats.NPaps(j),suff_stats.NPams(j))+betaln(suff_stats.NPbps(j),suff_stats.NPbms(j));
         else
             suff_stats.betasuff_AZQ(j) = betaintegral_noverbose(suff_stats.NPaps(j),suff_stats.NPams(j),suff_stats.NPbps(j),suff_stats.NPbms(j),50000);
-%             disp(suff_stats.NPaps(j))
-%             disp(suff_stats.NPams(j))
-%             disp(suff_stats.NPbps(j))
-%             disp(suff_stats.NPbms(j))
+            %             disp(suff_stats.NPaps(j))
+            %             disp(suff_stats.NPams(j))
+            %             disp(suff_stats.NPbps(j))
+            %             disp(suff_stats.NPbms(j))
             %disp(betaln(suff_stats.NPaps(j),suff_stats.NPams(j))+betaln(suff_stats.NPbps(j),suff_stats.NPbms(j)))
         end
     end
@@ -223,11 +233,11 @@ elseif mode(1) == 'q'
     try
         suff_stats.betasuff_sums(d) = betaln(suff_stats.NZp(d),suff_stats.NZm(d))+betaln(suff_stats.NQp(d),suff_stats.NQm(d));
     catch
-%         disp(suff_stats.NZp(d))
-%         disp(suff_stats.NZm(d))
-%         disp(suff_stats.NQp(d))
-%         disp(suff_stats.NQm(d))
-%         disp(sum(Z(:,d).*repmat(Q_diff,size(Z,1),1),2))
+        %         disp(suff_stats.NZp(d))
+        %         disp(suff_stats.NZm(d))
+        %         disp(suff_stats.NQp(d))
+        %         disp(suff_stats.NQm(d))
+        %         disp(sum(Z(:,d).*repmat(Q_diff,size(Z,1),1),2))
     end
     
     

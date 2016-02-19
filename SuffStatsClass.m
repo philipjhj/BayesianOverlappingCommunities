@@ -18,5 +18,8 @@ classdef SuffStatsClass
         betahyper_probs
         betasuff_AZQ
         betasuff_sums
+        % A matrices
+        Ap
+        An
     end
 end

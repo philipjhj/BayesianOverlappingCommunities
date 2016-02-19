@@ -10,10 +10,12 @@ if k == 1
 end
 
 d=size(matrix1,2);
+% Find k random indices to flip through
 rand_idx = sort(randsample(d,k));
 %rand_idx=[1 3 4];
 
 not_selected=[];
+
 for i = 1:length(matrix2_row)
     if all(i~=rand_idx) && matrix2_row(i) == 1
         not_selected=[not_selected i];
